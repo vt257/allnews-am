@@ -20,6 +20,9 @@ class MySQL(object):
             db_host: The host address. If not supplied, uses either the
                 ALLNEWS_AM_MYSQL_HOST environment variable when set, or
                 'localhost' otherwise.
+            db_name: The name of the database. If not supplied, uses either the
+                ALLNEWS_AM_MYSQL_NAME environment variable when set, or
+                'news' otherwise.
             db_user: The mysql user. If not supplied, uses the
                 ALLNEWS_AM_MYSQL_USER environment variable when set, or 'root'
                 otherwise.
