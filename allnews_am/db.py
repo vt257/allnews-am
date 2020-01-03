@@ -1,8 +1,6 @@
 import os
-
 import pymysql.cursors
 
-NEWS_DB = 'news'
 NEWS_TABLE = 'website_posts'
 TEXT_FIELD = 'text'
 
@@ -15,7 +13,7 @@ class MySQL(object):
     """
     __instance = None
 
-    def __new__(cls, db_host=None, db_user=None, db_pass=None):
+    def __new__(cls, db_host=None, db_name=None, db_user=None, db_pass=None):
         """Initializes the MySQL database singleton.
 
         Args:
@@ -36,6 +34,11 @@ class MySQL(object):
                     db_host = os.environ['ALLNEWS_AM_MYSQL_HOST']
                 else:
                     db_host = 'localhost'
+            if db_name is None:
+                if 'ALLNEWS_AM_MYSQL_NAME' in os.environ:
+                    db_name = os.environ['ALLNEWS_AM_MYSQL_NAME']
+                else:
+                    db_name = 'news'
             if db_user is None:
                 if 'ALLNEWS_AM_MYSQL_USER' in os.environ:
                     db_user = os.environ['ALLNEWS_AM_MYSQL_USER']
@@ -48,7 +51,7 @@ class MySQL(object):
                     db_pass = 'root'
 
             MySQL.__instance.connection = pymysql.connect(
-                host=db_host, user=db_user, password=db_pass, db=NEWS_DB,
+                host=db_host, user=db_user, password=db_pass, db=db_name,
                 charset='utf8mb4', cursorclass=pymysql.cursors.DictCursor)
         return MySQL.__instance
 
@@ -58,6 +61,9 @@ class MySQL(object):
         Args:
             limit: The number of news articles to fetch. If not set, fetches all
                 news articles.
+
+        Returns:
+            A sequence of strings corresponding to full text of the articles.
         """
         # TODO(vt257): Add support for including titles.
         with self.connection.cursor() as cursor:
