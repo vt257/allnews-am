@@ -31,7 +31,7 @@ You can run a basic evaluation using
 ```python
 python scripts\explore_word2vec.py
 ```
-
+g
 **NOTE** We are not doing lowercasing words and we keep the punctuation,
 so the scores on the analogy tasks are expected to be worse in comparison
 to text pre-processing that performs these steps.
