@@ -3,6 +3,7 @@ import pymysql.cursors
 
 NEWS_TABLE = 'website_posts'
 TEXT_FIELD = 'text'
+TITLE_FIELD = 'title'
 
 
 class MySQL(object):
@@ -59,17 +60,21 @@ class MySQL(object):
         return MySQL.__instance
 
     def fetch_news(self, limit=18446744073709551610):
-        """Gets the full text field of the news articles.
+        """Gets the title and full text field of the news articles.
 
         Args:
             limit: The number of news articles to fetch. If not set, fetches all
                 news articles.
 
         Returns:
-            A sequence of strings corresponding to full text of the articles.
+            A sequence of tuples strings corresponding to the title and full
+            text of the articles.
         """
-        # TODO(vt257): Add support for including titles.
         with self.connection.cursor() as cursor:
-            sql = f"SELECT `{TEXT_FIELD}` FROM `{NEWS_TABLE}` LIMIT %s"
+            sql = (f"SELECT `{TITLE_FIELD}`, `{TEXT_FIELD}` "
+                   f"FROM `{NEWS_TABLE}` LIMIT %s")
             cursor.execute(sql, (limit, ))
-            return [news_item[TEXT_FIELD] for news_item in cursor.fetchall()]
+            return [
+                (news_item[TITLE_FIELD], news_item[TEXT_FIELD])
+                for news_item in cursor.fetchall()
+            ]

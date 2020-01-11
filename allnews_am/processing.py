@@ -12,6 +12,9 @@ def tokenize(s):
         A Sequence of sequences, where the top level sequence are sentences and
         each sentence is a sequence of string tokens.
     """
+    s = s.strip()
+    if len(s) > 0 and s[-1] != ':':
+        s += ':'  # Required for correct tokenization.
     t = tokenizer.Tokenizer(s)
     t.segmentation().tokenization()
     # Segments are the sentences.
