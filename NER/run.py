@@ -1,25 +1,19 @@
 
 """
 Usage:
-    run.py train --train-src=<file> --train-tgt=<file> --dev-src=<file> --dev-tgt=<file> --vocab=<file> [options]
-    run.py evaluate [options] MODEL_PATH TEST_SOURCE_FILE OUTPUT_FILE
+    run.py train --train-src=<file>  [options]
+    run.py evaluate [options] MODEL_PATH TEST_SOURCE_FILE
 
 Options:
     --cuda                                  use GPU
     --train-src=<file>                      train source file
-    --train-tgt=<file>                      train target file
-    --dev-src=<file>                        dev source file
-    --dev-tgt=<file>                        dev target file
-    --seed=<int>                            seed [default: 0]
     --batch-size=<int>                      batch size [default: 32]
-    --log-every=<int>                       log every [default: 10]
     --max-epoch=<int>                       max epoch [default: 30]
-    --lr-decay=<float>                      learning rate decay [default: 0.5]
     --max-len=<int>                         sentence max size [default: 75]
-    --lr=<float>                            learning rate [default: 0.001]
-    --uniform-init=<float>                  uniformly initialize all parameters [default: 0.1]
+    --lr=<float>                            learning rate [default: 3e-5]
     --save-to=<file>                        model save path [default: model.bin]
-    --valid-niter=<int>                     perform validation after how many iterations [default: 2000]
+    --train-test-split=<float>              train test split [default: 0.1]
+    --full-finetuning                       use full finetuning
 """
 
 
@@ -31,10 +25,12 @@ from sklearn.model_selection import train_test_split
 from pytorch_pretrained_bert import BertTokenizer, BertConfig
 from pytorch_pretrained_bert import BertForTokenClassification, BertAdam
 from typing import List, Tuple, Dict, Set, Union
-from seqeval.metrics import f1_score
+from seqeval.metrics import f1_score, classification_report
 import numpy as np
 import sys
+from docopt import docopt
 import sentence
+from tqdm import trange
 
 
 
@@ -44,18 +40,20 @@ def flat_accuracy(preds, labels):
     return np.sum(pred_flat == labels_flat) / len(labels_flat)
 
 def train(args: Dict):
-    MAX_LEN = int(args('--max-len')) if args['--max-len'] else 75
-    bs = int(args('--batch-size')) if args['--batch-size'] else 32
+    MAX_LEN = int(args['--max-len'])
+    bs = int(args['--batch-size'])
 
-    dataLoader= sentence.Sentence(args('--train-src'))
+    model_save_path = args['--save-to']
+
+    dataLoader= sentence.Sentence(args['--train-src'])
 
     device = torch.device("cuda:0" if args['--cuda'] else "cpu")
     print('use device: %s' % device, file=sys.stderr)
     n_gpu = torch.cuda.device_count()
 
-    torch.cuda.get_device_name(0)
+    ##torch.cuda.get_device_name(0)
 
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
+    tokenizer = BertTokenizer.from_pretrained('bert-base-multilingual-cased', do_lower_case=False)
 
     tokenized_texts = [tokenizer.tokenize(sent) for sent in dataLoader.sentences]
     print(tokenized_texts[0])
@@ -69,10 +67,12 @@ def train(args: Dict):
 
     attention_masks = [[float(i > 0) for i in ii] for ii in input_ids]
 
+    tts = float(args['--train-test-split'])
+
     tr_inputs, val_inputs, tr_tags, val_tags = train_test_split(input_ids, tags,
-                                                                random_state=2018, test_size=0.1)
+                                                                random_state=2018, test_size=tts)
     tr_masks, val_masks, _, _ = train_test_split(attention_masks, input_ids,
-                                                 random_state=2018, test_size=0.1)
+                                                 random_state=2018, test_size=tts)
 
     tr_inputs = torch.tensor(tr_inputs)
     val_inputs = torch.tensor(val_inputs)
@@ -89,11 +89,11 @@ def train(args: Dict):
     valid_sampler = SequentialSampler(valid_data)
     valid_dataloader = DataLoader(valid_data, sampler=valid_sampler, batch_size=bs)
 
-    model = BertForTokenClassification.from_pretrained("bert-base-uncased", num_labels=len(dataLoader.tag2idx))
+    model = BertForTokenClassification.from_pretrained("bert-base-multilingual-cased", num_labels=len(dataLoader.tag2idx))
 
     model.cuda();
 
-    FULL_FINETUNING = True
+    FULL_FINETUNING = True if args['--full-finetuning'] else False
     if FULL_FINETUNING:
         param_optimizer = list(model.named_parameters())
         no_decay = ['bias', 'gamma', 'beta']
@@ -106,11 +106,14 @@ def train(args: Dict):
     else:
         param_optimizer = list(model.classifier.named_parameters())
         optimizer_grouped_parameters = [{"params": [p for n, p in param_optimizer]}]
-    optimizer = Adam(optimizer_grouped_parameters, lr=3e-5)
+
+    lr=float(args['--lr'])
+    optimizer = Adam(optimizer_grouped_parameters, lr=lr)
 
 
-    epochs = 5
+    epochs = int(args['--max-epoch'])
     max_grad_norm = 1.0
+    hist_valid_scores = []
 
     for _ in trange(epochs, desc="Epoch"):
         # TRAIN loop
@@ -168,15 +171,57 @@ def train(args: Dict):
         print("Validation Accuracy: {}".format(eval_accuracy / nb_eval_steps))
         pred_tags = [dataLoader.tags_vals[p_i] for p in predictions for p_i in p]
         valid_tags = [dataLoader.tags_vals[l_ii] for l in true_labels for l_i in l for l_ii in l_i]
-        print("F1-Score: {}".format(f1_score(pred_tags, valid_tags)))
+        f1=f1_score(pred_tags, valid_tags)
+        print("F1-Score: {}".format(f1))
+
+        is_better = len(hist_valid_scores) == 0 or f1 > max(hist_valid_scores)
+        hist_valid_scores.append(f1)
+        if is_better:
+            model.save(model_save_path)
+             # also save the optimizers' state
+            torch.save(optimizer.state_dict(), model_save_path + '.optim')
+
+    print('reached maximum number of epochs!', file=sys.stderr)
+    exit(0)
+
 
 def evaluate(args:Dict):
+    print("load model from {}".format(args['MODEL_PATH']), file=sys.stderr)
+
+    dataLoader = sentence.Sentence(args['TEST_SOURCE_FILE'])
+
+    device = torch.device("cuda:0" if args['--cuda'] else "cpu")
+
+    model=BertForTokenClassification.from_pretrained(args['MODEL_PATH'], num_labels=len(dataLoader.tag2idx))
+    tokenizer = BertTokenizer.from_pretrained('bert-base-multilingual-cased', do_lower_case=False)
+    tokenized_texts = [tokenizer.tokenize(sent) for sent in dataLoader.sentences]
+
+    if args['--cuda']:
+        model = model.to(torch.device("cuda:0"))
+
+    input_ids_test = pad_sequences([tokenizer.convert_tokens_to_ids(txt) for txt in tokenized_texts],
+                              maxlen=75, dtype="long", truncating="post", padding="post")
+
+    tags_test = pad_sequences([[dataLoader.tag2idx.get(l) for l in lab] for lab in dataLoader.labels],
+                         maxlen=75, value=dataLoader.tag2idx["O"], padding="post",
+                         dtype="long", truncating="post")
+
+    attention_masks_test = [[float(i > 0) for i in ii] for ii in input_ids_test]
+
+    te_inputs = torch.tensor(input_ids_test)
+    te_tags = torch.tensor(tags_test)
+    te_masks = torch.tensor(attention_masks_test)
+
+    test_data = TensorDataset(te_inputs, te_masks, te_tags)
+    test_sampler = SequentialSampler(test_data)
+    test_dataloader = DataLoader(test_data, sampler=test_sampler, batch_size=32)
+
     model.eval()
     predictions = []
     true_labels = []
     eval_loss, eval_accuracy = 0, 0
     nb_eval_steps, nb_eval_examples = 0, 0
-    for batch in valid_dataloader:
+    for batch in test_dataloader:
         batch = tuple(t.to(device) for t in batch)
         b_input_ids, b_input_mask, b_labels = batch
 
@@ -198,22 +243,30 @@ def evaluate(args:Dict):
         nb_eval_examples += b_input_ids.size(0)
         nb_eval_steps += 1
 
-    pred_tags = [[tags_vals[p_i] for p_i in p] for p in predictions]
-    valid_tags = [[tags_vals[l_ii] for l_ii in l_i] for l in true_labels for l_i in l]
-    print("Validation loss: {}".format(eval_loss / nb_eval_steps))
-    print("Validation Accuracy: {}".format(eval_accuracy / nb_eval_steps))
-    print("Validation F1-Score: {}".format(f1_score(pred_tags, valid_tags)))
+    pred_tags = [[dataLoader.tags_vals[p_i] for p_i in p] for p in predictions]
+    test_tags = [[dataLoader.tags_vals[l_ii] for l_ii in l_i] for l in true_labels for l_i in l]
+
+    tags_test_fin = list()
+    for l in tags_test:
+        temp_tag = list()
+        for l_i in l:
+            temp_tag.append(dataLoader.tags_vals[l_i])
+        tags_test_fin.append(temp_tag)
+
+    print("Test loss: {}".format(eval_loss / nb_eval_steps))
+    print("Test Accuracy: {}".format(eval_accuracy / nb_eval_steps))
+    print("Test F1-Score: {}".format(f1_score(tags_test_fin, pred_tags)))
+
+    print(classification_report(tags_test_fin, pred_tags))
+
+    print("Number of Test sentences: ", len(tags_test_fin))
 
 def main():
     """ Main func.
     """
     args = docopt(__doc__)
-
-    # Check pytorch version
-    assert(torch.__version__ == "1.0.0"),
-
     # seed the random number generators
-    seed = int(args['--seed'])
+    seed = 0
     torch.manual_seed(seed)
     if args['--cuda']:
         torch.cuda.manual_seed(seed)
