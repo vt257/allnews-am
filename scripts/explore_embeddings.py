@@ -10,8 +10,12 @@ file_dir = os.path.dirname(os.path.realpath(__file__))
 
 
 def main(args):
-    model = gensim.models.Word2Vec.load(
-        os.path.join(file_dir, '../allnews_am/models/', args.model_name))
+    try:
+        model = gensim.models.fasttext.FastText.load(
+            os.path.join(file_dir, '../allnews_am/models/', args.model_name))
+    except AttributeError:
+        model = gensim.models.word2vec.Word2Vec.load(
+            os.path.join(file_dir, '../allnews_am/models/', args.model_name))
 
     logging.info('Evaluating YerevaNN-Analogies')
     model.wv.evaluate_word_analogies(
@@ -28,7 +32,7 @@ def main(args):
           (model.wv.index2word[i], model.wv.vocab[model.wv.index2word[i]].count)
           for i in range(10)
     ])
-    similar_words_to = 'Փաշինյան'
+    similar_words_to = 'Փաշինյան-Ալիեւ'
     print(f'Most similar to "{similar_words_to}"',
           model.wv.most_similar(similar_words_to))
 
@@ -37,7 +41,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-            '--model_name', default='word2vec.model',
+            '--model_name', default='embeddings.model',
             help='The name of the model file in the models folder.')
-    word2vec_args = parser.parse_args()
-    main(word2vec_args)
+    embedding_args = parser.parse_args()
+    main(embedding_args)
