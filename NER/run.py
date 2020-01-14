@@ -2,16 +2,17 @@
 """
 Usage:
     run.py train --train-src=<file>  [options]
-    run.py evaluate [options] MODEL_PATH TEST_SOURCE_FILE
+    run.py test --test-src=<file> [options]
 
 Options:
     --cuda                                  use GPU
+    --seed=<int>                            seed [default: 0]
     --train-src=<file>                      train source file
+    --test-src=<file>                       test source file
     --batch-size=<int>                      batch size [default: 32]
     --max-epoch=<int>                       max epoch [default: 30]
     --max-len=<int>                         sentence max size [default: 75]
     --lr=<float>                            learning rate [default: 3e-5]
-    --save-to=<file>                        model save path [default: model.bin]
     --train-test-split=<float>              train test split [default: 0.1]
     --full-finetuning                       use full finetuning
 """
@@ -43,19 +44,20 @@ def train(args: Dict):
     MAX_LEN = int(args['--max-len'])
     bs = int(args['--batch-size'])
 
-    model_save_path = args['--save-to']
-
     dataLoader= sentence.Sentence(args['--train-src'])
 
     device = torch.device("cuda:0" if args['--cuda'] else "cpu")
     print('use device: %s' % device, file=sys.stderr)
     n_gpu = torch.cuda.device_count()
 
-    ##torch.cuda.get_device_name(0)
+    torch.cuda.get_device_name(0)
 
     tokenizer = BertTokenizer.from_pretrained('bert-base-multilingual-cased', do_lower_case=False)
 
-    tokenized_texts = [tokenizer.tokenize(sent) for sent in dataLoader.sentences]
+    ##tokenized_texts = [tokenizer.tokenize(sent) for sent in dataLoader.sentences]
+    tokenized_texts = [[s[0] for s in sent] for sent in dataLoader.sentences]
+
+    print(dataLoader.sentences[0])
     print(tokenized_texts[0])
 
     input_ids = pad_sequences([tokenizer.convert_tokens_to_ids(txt) for txt in tokenized_texts],
@@ -67,12 +69,21 @@ def train(args: Dict):
 
     attention_masks = [[float(i > 0) for i in ii] for ii in input_ids]
 
+    """
+    The BERT Model requires us to have a [SEP] token at the end of each sentence as a part of its preprocessing. 102 is the index BERT recognizes as the index of [SEP]. Hence, I am adding it to the end of the sentence after padding/truncating
+    (as it might have been removed if the sequences were greater than 75 in length) to be compatible with BERT's requirement. I didn't have it in the beginning and I thought it would be the reason for the poor results but changing it didn't help and I chose to keep it anyways as it felt right. :)
+    """
+    for i, inp in enumerate(input_ids):
+        if (102 not in inp):
+            inp[-1] = 102
+            tags[i][-1] = dataLoader.tag2idx.get("O")
+
     tts = float(args['--train-test-split'])
 
     tr_inputs, val_inputs, tr_tags, val_tags = train_test_split(input_ids, tags,
-                                                                random_state=2018, test_size=tts)
+                                                                random_state=10, test_size=tts)
     tr_masks, val_masks, _, _ = train_test_split(attention_masks, input_ids,
-                                                 random_state=2018, test_size=tts)
+                                                 random_state=10, test_size=tts)
 
     tr_inputs = torch.tensor(tr_inputs)
     val_inputs = torch.tensor(val_inputs)
@@ -107,8 +118,7 @@ def train(args: Dict):
         param_optimizer = list(model.classifier.named_parameters())
         optimizer_grouped_parameters = [{"params": [p for n, p in param_optimizer]}]
 
-    lr=float(args['--lr'])
-    optimizer = Adam(optimizer_grouped_parameters, lr=lr)
+    optimizer = Adam(optimizer_grouped_parameters, lr=float(args['--lr']))
 
 
     epochs = int(args['--max-epoch'])
@@ -171,42 +181,62 @@ def train(args: Dict):
         print("Validation Accuracy: {}".format(eval_accuracy / nb_eval_steps))
         pred_tags = [dataLoader.tags_vals[p_i] for p in predictions for p_i in p]
         valid_tags = [dataLoader.tags_vals[l_ii] for l in true_labels for l_i in l for l_ii in l_i]
-        f1=f1_score(pred_tags, valid_tags)
+        f1=f1_score(valid_tags,pred_tags)
         print("F1-Score: {}".format(f1))
 
         is_better = len(hist_valid_scores) == 0 or f1 > max(hist_valid_scores)
         hist_valid_scores.append(f1)
         if is_better:
-            model.save(model_save_path)
-             # also save the optimizers' state
-            torch.save(optimizer.state_dict(), model_save_path + '.optim')
+            output_model_file = "./models/model_file.bin"
+            output_config_file = "./models/config_file.bin"
+            output_vocab_file = "./models"
+
+            model_to_save = model.module if hasattr(model, 'module') else model
+            torch.save(model_to_save.state_dict(), output_model_file)
+            model_to_save.config.to_json_file(output_config_file)
+            tokenizer.save_vocabulary(output_vocab_file)
 
     print('reached maximum number of epochs!', file=sys.stderr)
     exit(0)
 
 
 def evaluate(args:Dict):
-    print("load model from {}".format(args['MODEL_PATH']), file=sys.stderr)
+    print("load model from {}".format('/models'), file=sys.stderr)
 
-    dataLoader = sentence.Sentence(args['TEST_SOURCE_FILE'])
+    dataLoader = sentence.Sentence(args['--test-src'])
 
     device = torch.device("cuda:0" if args['--cuda'] else "cpu")
 
-    model=BertForTokenClassification.from_pretrained(args['MODEL_PATH'], num_labels=len(dataLoader.tag2idx))
-    tokenizer = BertTokenizer.from_pretrained('bert-base-multilingual-cased', do_lower_case=False)
-    tokenized_texts = [tokenizer.tokenize(sent) for sent in dataLoader.sentences]
+    output_model_file = "./models/model_file.bin"
+    output_config_file = "./models/config_file.bin"
+    output_vocab_file = "./models/vocab.txt"
+    config = BertConfig.from_json_file(output_config_file)
+    model = BertForTokenClassification(config,num_labels=len(dataLoader.tag2idx))
+    state_dict = torch.load(output_model_file)
+    model.load_state_dict(state_dict)
+    tokenizer = BertTokenizer(output_vocab_file, do_lower_case=False)
+
+    ##tokenized_texts = [tokenizer.tokenize(sent) for sent in dataLoader.sentences]
+    tokenized_texts = [[s[0] for s in sent] for sent in dataLoader.sentences]
 
     if args['--cuda']:
         model = model.to(torch.device("cuda:0"))
 
+    MAX_LEN = int(args['--max-len'])
+
     input_ids_test = pad_sequences([tokenizer.convert_tokens_to_ids(txt) for txt in tokenized_texts],
-                              maxlen=75, dtype="long", truncating="post", padding="post")
+                              maxlen=MAX_LEN, dtype="long", truncating="post", padding="post")
 
     tags_test = pad_sequences([[dataLoader.tag2idx.get(l) for l in lab] for lab in dataLoader.labels],
-                         maxlen=75, value=dataLoader.tag2idx["O"], padding="post",
+                         maxlen=MAX_LEN, value=dataLoader.tag2idx["O"], padding="post",
                          dtype="long", truncating="post")
 
     attention_masks_test = [[float(i > 0) for i in ii] for ii in input_ids_test]
+
+    for i, inp in enumerate(input_ids_test):
+        if (102 not in inp):
+            inp[-1] = 102
+            tags_test[i][-1] = dataLoader.tag2idx.get("O")
 
     te_inputs = torch.tensor(input_ids_test)
     te_tags = torch.tensor(tags_test)
@@ -214,7 +244,7 @@ def evaluate(args:Dict):
 
     test_data = TensorDataset(te_inputs, te_masks, te_tags)
     test_sampler = SequentialSampler(test_data)
-    test_dataloader = DataLoader(test_data, sampler=test_sampler, batch_size=32)
+    test_dataloader = DataLoader(test_data, sampler=test_sampler, batch_size=int(args['--batch-size']))
 
     model.eval()
     predictions = []
@@ -266,7 +296,7 @@ def main():
     """
     args = docopt(__doc__)
     # seed the random number generators
-    seed = 0
+    seed = int(args['--seed'])
     torch.manual_seed(seed)
     if args['--cuda']:
         torch.cuda.manual_seed(seed)
