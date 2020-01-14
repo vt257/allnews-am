@@ -54,8 +54,7 @@ def train(args: Dict):
 
     tokenizer = BertTokenizer.from_pretrained('bert-base-multilingual-cased', do_lower_case=False)
 
-    ##tokenized_texts = [tokenizer.tokenize(sent) for sent in dataLoader.sentences]
-    tokenized_texts = [[s[0] for s in sent] for sent in dataLoader.sentences]
+    tokenized_texts = [tokenizer.tokenize(sent) for sent in dataLoader.sentences]
 
     print(dataLoader.sentences[0])
     print(tokenized_texts[0])
@@ -216,8 +215,7 @@ def evaluate(args:Dict):
     model.load_state_dict(state_dict)
     tokenizer = BertTokenizer(output_vocab_file, do_lower_case=False)
 
-    ##tokenized_texts = [tokenizer.tokenize(sent) for sent in dataLoader.sentences]
-    tokenized_texts = [[s[0] for s in sent] for sent in dataLoader.sentences]
+    tokenized_texts = [tokenizer.tokenize(sent) for sent in dataLoader.sentences]
 
     if args['--cuda']:
         model = model.to(torch.device("cuda:0"))
