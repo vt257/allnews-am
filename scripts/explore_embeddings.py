@@ -19,18 +19,17 @@ def main(args):
 
     logging.info('Evaluating YerevaNN-Analogies')
     model.wv.evaluate_word_analogies(
-        os.path.join(file_dir,
-                     '../allnews_am/data/yerevann_analogies.txt'))
+        os.path.join(file_dir, '../allnews_am/data/yerevann_analogies.txt'))
 
     logging.info('Evaluating Avetisyan-Ghukasyan-Analogies')
     model.wv.evaluate_word_analogies(
-          os.path.join(file_dir,
-                       '../allnews_am/data/avetisyan_ghukasyan_analogies.txt'))
+          os.path.join(file_dir, '../allnews_am/data/'
+                                 'coarse_avetisyan_ghukasyan_analogies.txt'))
 
     print(f'Vocabulary size: {len(model.wv.vocab)}')
     print('Most common words: ', [
           (model.wv.index2word[i], model.wv.vocab[model.wv.index2word[i]].count)
-          for i in range(10)
+          for i in range(30)
     ])
     similar_words_to = 'Փաշինյան-Ալիեւ'
     print(f'Most similar to "{similar_words_to}"',

@@ -110,3 +110,5 @@ venv.bak/
 
 # large files
 allnews_am/data/corpus
+allnews_am/data/corpus_100k
+
