@@ -2,3 +2,10 @@ cryptography
 PyMySQL
 gensim
 tqdm
+tensorflow
+numpy
+sklearn
+seqeval
+docopt
+pytorch-pretrained-bert
+nltk
