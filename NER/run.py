@@ -1,27 +1,29 @@
-
 """
 Usage:
     run.py train --train-src=<file>  [options]
     run.py test --test-src=<file> [options]
 
 Options:
-    --cuda                                  use GPU
-    --seed=<int>                            seed [default: 0]
-    --train-src=<file>                      train source file
-    --test-src=<file>                       test source file
-    --batch-size=<int>                      batch size [default: 32]
-    --max-epoch=<int>                       max epoch [default: 30]
-    --max-len=<int>                         sentence max size [default: 75]
-    --lr=<float>                            learning rate [default: 3e-5]
-    --train-test-split=<float>              train test split [default: 0.1]
-    --full-finetuning                       use full finetuning
+    -h --help                         show this screen
+    --cuda                            use GPU
+    --seed=<int>                      seed [default: 0]
+    --train-src=<file>                train source file
+    --test-src=<file>                 test source file
+    --model-root=<file>               the path to the directory for model files
+                                      [default: ./models]
+    --batch-size=<int>                batch size [default: 32]
+    --max-epoch=<int>                 max epoch [default: 30]
+    --max-len=<int>                   sentence max size [default: 75]
+    --lr=<float>                      learning rate [default: 3e-5]
+    --train-test-split=<float>        train test split [default: 0.1]
+    --full-finetuning                 use full finetuning
 """
 
-
+import os
 import torch
 from torch.optim import Adam
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler, SequentialSampler
-from keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.preprocessing.sequence import pad_sequences
 from sklearn.model_selection import train_test_split
 from pytorch_pretrained_bert import BertTokenizer, BertConfig
 from pytorch_pretrained_bert import BertForTokenClassification, BertAdam
@@ -43,14 +45,15 @@ def flat_accuracy(preds, labels):
 def train(args: Dict):
     MAX_LEN = int(args['--max-len'])
     bs = int(args['--batch-size'])
+    model_root = args['--model-root'] if args['--model-root'] else './models'
 
     dataLoader= sentence.Sentence(args['--train-src'])
 
     device = torch.device("cuda:0" if args['--cuda'] else "cpu")
     print('use device: %s' % device, file=sys.stderr)
-    n_gpu = torch.cuda.device_count()
-
-    torch.cuda.get_device_name(0)
+    if args['--cuda']:
+        n_gpu = torch.cuda.device_count()
+        torch.cuda.get_device_name(0)
 
     tokenizer = BertTokenizer.from_pretrained('bert-base-multilingual-cased', do_lower_case=False)
 
@@ -99,9 +102,11 @@ def train(args: Dict):
     valid_sampler = SequentialSampler(valid_data)
     valid_dataloader = DataLoader(valid_data, sampler=valid_sampler, batch_size=bs)
 
-    model = BertForTokenClassification.from_pretrained("bert-base-multilingual-cased", num_labels=len(dataLoader.tag2idx))
+    model = BertForTokenClassification.from_pretrained(
+        "bert-base-multilingual-cased", num_labels=len(dataLoader.tag2idx))
 
-    model.cuda();
+    if args['--cuda']:
+        model.cuda()
 
     FULL_FINETUNING = True if args['--full-finetuning'] else False
     if FULL_FINETUNING:
@@ -118,7 +123,6 @@ def train(args: Dict):
         optimizer_grouped_parameters = [{"params": [p for n, p in param_optimizer]}]
 
     optimizer = Adam(optimizer_grouped_parameters, lr=float(args['--lr']))
-
 
     epochs = int(args['--max-epoch'])
     max_grad_norm = 1.0
@@ -186,9 +190,9 @@ def train(args: Dict):
         is_better = len(hist_valid_scores) == 0 or f1 > max(hist_valid_scores)
         hist_valid_scores.append(f1)
         if is_better:
-            output_model_file = "./models/model_file.bin"
-            output_config_file = "./models/config_file.bin"
-            output_vocab_file = "./models"
+            output_model_file = os.path.join(model_root, "model_file.bin")
+            output_config_file = os.path.join(model_root, "config_file.bin")
+            output_vocab_file = model_root
 
             model_to_save = model.module if hasattr(model, 'module') else model
             torch.save(model_to_save.state_dict(), output_model_file)
@@ -200,15 +204,16 @@ def train(args: Dict):
 
 
 def evaluate(args:Dict):
-    print("load model from {}".format('/models'), file=sys.stderr)
+    model_root = args['--model-root'] if args['--model-root'] else './models'
+    print("load model from {}".format(model_root), file=sys.stderr)
 
     dataLoader = sentence.Sentence(args['--test-src'])
 
     device = torch.device("cuda:0" if args['--cuda'] else "cpu")
 
-    output_model_file = "./models/model_file.bin"
-    output_config_file = "./models/config_file.bin"
-    output_vocab_file = "./models/vocab.txt"
+    output_model_file = os.path.join(model_root, "model_file.bin")
+    output_config_file = os.path.join(model_root, "config_file.bin")
+    output_vocab_file = os.path.join(model_root, "vocab.txt")
     config = BertConfig.from_json_file(output_config_file)
     model = BertForTokenClassification(config,num_labels=len(dataLoader.tag2idx))
     state_dict = torch.load(output_model_file)

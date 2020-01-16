@@ -1,9 +1,74 @@
 """Text processing methods."""
+from nltk.corpus.reader import ConllCorpusReader
+from nltk.util import LazyMap, LazyConcatenation
+from nltk.tag import map_tag
+
 import allnews_am.tokenizer.tokenizer as tokenizer
 
 STANDARDIZATION = {
     ':': '։',  # Colon with Armenian վերջակետ
 }
+
+
+class ConllReader(ConllCorpusReader):
+    """ConllCorpusReader that allows getting columns other than chunks.
+
+    See https://www.nltk.org/_modules/nltk/corpus/reader/conll.html for more
+    documentation and the source code.
+
+    Attributes:
+        root: The root folder of the dataset file(s).
+        fileids: A name of a file or names of the files in the root folder to
+            load.
+        columntypes: The types of columns in the conll file, as a sequence.
+    """
+
+    def iob_words(self, fileids=None, tagset=None,
+                  column=ConllCorpusReader.CHUNK):
+        """Returns IOB annotations as tuples.
+
+        Args:
+            fileids: The list of fileids that make up this corpus.
+            tagset: The tagset.
+            column: The column to get the IOB annotations from, e.g. 'ne' for
+                named entities or 'pos' for POS tags.
+
+        Returns:
+            A list of word/tag/IOB tuples.
+        """
+        self._require(self.WORDS, self.POS, self.CHUNK)
+
+        def get_iob_words(grid):
+            return self._get_iob_words(grid, tagset, column)
+
+        return LazyConcatenation(LazyMap(get_iob_words, self._grids(fileids)))
+
+    def iob_sents(self, fileids=None, tagset=None,
+                  column=ConllCorpusReader.CHUNK):
+        """Returns a list of lists of IOB annotated sentences.
+
+        Args:
+            fileids: The list of fileids that make up this corpus.
+            tagset: The tagset.
+            column: The column to get the IOB annotations from, e.g. 'ne' for
+                named entities or 'pos' for POS tags.
+
+        Returns:
+            A list of lists of word/tag/IOB tuples.
+        """
+        self._require(self.WORDS, self.POS, self.CHUNK)
+
+        def get_iob_words(grid):
+            return self._get_iob_words(grid, tagset, column)
+
+        return LazyMap(get_iob_words, self._grids(fileids))
+
+    def _get_iob_words(self, grid, tagset=None, column=ConllCorpusReader.CHUNK):
+        pos_tags = self._get_column(grid, self._colmap['pos'])
+        if tagset and tagset != self._tagset:
+            pos_tags = [map_tag(self._tagset, tagset, t) for t in pos_tags]
+        return list(zip(self._get_column(grid, self._colmap['words']), pos_tags,
+                        self._get_column(grid, self._colmap[column])))
 
 
 def tokenize(s):
