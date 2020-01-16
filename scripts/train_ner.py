@@ -6,9 +6,9 @@ file_dir = os.path.dirname(os.path.realpath(__file__))
 conll_data_root = os.path.join(file_dir, '../allnews_am/NER_datasets')
 COLUMN_TYPES = (
     allnews_am.processing.ConllReader.WORDS,
-    allnews_am.processing.ConllReader.POS,
+    allnews_am.processing.CognllReader.POS,
     allnews_am.processing.ConllReader.CHUNK,
-    allnews_am.processingg.ConllReader.NE,
+    allnews_am.processing.ConllReader.NE,
 )
 
 
