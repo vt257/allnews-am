@@ -18,9 +18,11 @@ def main(args):
         for title, text in tqdm.tqdm(all_news):
             for string in [title, text]:
                 tokenized = allnews_am.processing.tokenize(string)
-                concatenated = ' '.join(
-                    [' '.join(sentence) for sentence in tokenized])
-                corpus_file.write(f'{concatenated}\n')
+                standardized = allnews_am.processing.standardize(tokenized)
+                for sentence in standardized:
+                    # One sentence per line.
+                    concatenated = ' '.join(sentence)
+                    corpus_file.write(f'{concatenated}\n')
 
 
 if __name__ == '__main__':
