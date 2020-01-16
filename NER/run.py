@@ -87,10 +87,10 @@ def train(args: Dict):
     tr_masks, val_masks, _, _ = train_test_split(attention_masks, input_ids,
                                                  random_state=10, test_size=tts)
 
-    tr_inputs = torch.tensor(tr_inputs)
-    val_inputs = torch.tensor(val_inputs)
-    tr_tags = torch.tensor(tr_tags)
-    val_tags = torch.tensor(val_tags)
+    tr_inputs = torch.tensor(tr_inputs).to(torch.int64)
+    val_inputs = torch.tensor(val_inputs).to(torch.int64)
+    tr_tags = torch.tensor(tr_tags).to(torch.int64)
+    val_tags = torch.tensor(val_tags).to(torch.int64)
     tr_masks = torch.tensor(tr_masks)
     val_masks = torch.tensor(val_masks)
 
@@ -241,8 +241,8 @@ def evaluate(args:Dict):
             inp[-1] = 102
             tags_test[i][-1] = dataLoader.tag2idx.get("O")
 
-    te_inputs = torch.tensor(input_ids_test)
-    te_tags = torch.tensor(tags_test)
+    te_inputs = torch.tensor(input_ids_test).to(torch.int64)
+    te_tags = torch.tensor(tags_test).to(torch.int64)
     te_masks = torch.tensor(attention_masks_test)
 
     test_data = TensorDataset(te_inputs, te_masks, te_tags)
