@@ -11,20 +11,20 @@ def partitionRankings(data, percent):
 def writeInfile(data, filename):
     tokenizer = AutoTokenizer.from_pretrained('bert-base-multilingual-cased')
     subword_len_counter = 0
-    with open(filename, 'wb') as f:
+    with open(filename, 'wt',encoding='utf-8') as f:
         for sentence in data:
             for (token, key) in sentence:
                 current_subwords_len = len(tokenizer.tokenize(token))
                 if current_subwords_len == 0:
                     continue
                 if (subword_len_counter + current_subwords_len) > 128:
-                    f.write("\n".encode('UTF-8'))
-                    f.write((token+' '+key+'\n').encode('UTF-8'))
+                    f.write("\n")
+                    f.write((token+' '+key+'\n'))
                     subword_len_counter = 0
                     continue
                 subword_len_counter += current_subwords_len
-                f.write((token+' '+key+'\n').encode('UTF-8'))
-            f.write('\n'.encode('UTF-8'))
+                f.write((token+' '+key+'\n'))
+            f.write('\n')
 
 if __name__ == '__main__':
     traindevgetter=sentence.Sentence('pioner-silver/train.conll03')
