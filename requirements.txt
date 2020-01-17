@@ -10,3 +10,4 @@ docopt
 pytorch-pretrained-bert
 nltk
 pandas
+matplotlib
