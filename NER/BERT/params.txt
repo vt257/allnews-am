@@ -5,22 +5,24 @@ source   https://github.com/huggingface/transformers/tree/master/examples#named-
 
 3. run run_ner.py with params defined below
 
+
+
 --data_dir
-./
+./data
 --model_type
 bert
 --labels
-./labels.txt
+./data/labels.txt
 --model_name_or_path
 bert-base-multilingual-cased
 --output_dir
 armenian-model
 --max_seq_length
-128
+256
 --num_train_epochs
-3
+4
 --per_gpu_train_batch_size
-32
+16
 --save_steps
 750
 --seed
