@@ -50,7 +50,7 @@ from transformers import (
     XLMRobertaTokenizer,
     get_linear_schedule_with_warmup,
 )
-from utils_ner import convert_examples_to_features, get_labels, read_examples_from_file
+from util_ner import convert_examples_to_features, get_labels, read_examples_from_file
 
 
 try:
