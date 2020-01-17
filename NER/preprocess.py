@@ -17,7 +17,7 @@ def writeInfile(data, filename):
                 current_subwords_len = len(tokenizer.tokenize(token))
                 if current_subwords_len == 0:
                     continue
-                if (subword_len_counter + current_subwords_len) > 128:
+                if (subword_len_counter + current_subwords_len) > 512:
                     f.write("\n")
                     f.write((token+' '+key+'\n'))
                     subword_len_counter = 0
@@ -32,8 +32,8 @@ if __name__ == '__main__':
 
     train,dev=partitionRankings(traindevgetter.tagged_sentences, 0.1)
 
-    writeInfile(list(train),'train.txt')
-    writeInfile(list(dev), 'dev.txt')
-    writeInfile(list(testgetter.tagged_sentences), 'test.txt')
+    writeInfile(list(train),'data/train.txt')
+    writeInfile(list(dev), 'data/dev.txt')
+    writeInfile(list(testgetter.tagged_sentences), 'data/test.txt')
 
 
