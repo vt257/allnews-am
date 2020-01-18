@@ -7,7 +7,7 @@ numpy
 sklearn
 seqeval
 docopt
-pytorch-pretrained-bertg
+pytorch-pretrained-bert
 nltk
 pandas
 matplotlib
