@@ -1,0 +1,32 @@
+source   https://github.com/huggingface/transformers/tree/master/examples#named-entity-recognition
+
+1. run preprocess.py to create train.txt, dev.txt and test.txt datasets
+2. run command  cat train.txt dev.txt test.txt | cut -d " " -f 2 | grep -v "^$"| sort | uniq > labels.txt   this is to get unique labels from dataset and create labels.txt file
+
+3. run run_ner.py with params defined below
+
+
+
+--data_dir
+./data
+--model_type
+bert
+--labels
+./data/labels.txt
+--model_name_or_path
+bert-base-multilingual-cased
+--output_dir
+armenian-model
+--max_seq_length
+256
+--num_train_epochs
+4
+--per_gpu_train_batch_size
+16
+--save_steps
+750
+--seed
+1
+--do_train
+--do_eval
+--do_predict
