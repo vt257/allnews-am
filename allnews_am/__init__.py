@@ -30,4 +30,7 @@ def parse_w2v_ft_args(file_dir):
                         help='Number of epochs.')
     parser.add_argument('--subsample', default=0.003,
                         help='Sub-sampling rate.')
+    parser.add_argument(
+            '-add_ner_sents', action='store_true',
+            help='If set, will add the NER sentences to the training corpus.')
     return parser.parse_args()

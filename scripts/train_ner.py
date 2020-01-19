@@ -18,7 +18,7 @@ COLUMN_TYPES = (
 )
 
 BATCH_SIZE = 32  # Number of examples used in each learning step.
-EPOCHS = 5  # Number of passes through entire dataset.
+EPOCHS = 20  # Number of passes through entire dataset.
 EMBEDDING = 50  # Dimension of word embedding vector.
 LSTM_SIZE = 32  # Dimension of the hidden/cell states of the LSTM network.
 
