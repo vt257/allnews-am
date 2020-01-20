@@ -205,7 +205,7 @@ def main(args):
             y_pred += np.argmax(
                 model.predict_on_batch(np.asarray(x_true)), 2).tolist()[0]
         print(sklearn.metrics.classification_report(
-            y_true, y_pred, labels=list(range(8)), target_names=idx2tag))
+            y_true, y_pred, labels=list(range(1, 8)), target_names=idx2tag[1:]))
 
     # These are the "easy scores", where it is not necessary to get the full
     # Named entity to get a non-zero score.
@@ -232,7 +232,7 @@ if __name__ == '__main__':
         '--epochs', default=30,
         help='The number of training epochs (passes through entire dataset).')
     parser.add_argument(
-        '--lstm_size', default=32,
+        '--lstm_size', default=100,
         help='Dimension of the hidden/cell states of the LSTM network.')
     parser.add_argument(
         '--emb_dropout', default=0.1,
