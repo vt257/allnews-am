@@ -1,10 +1,25 @@
-"""Train an NER model."""
+"""Train an NER model.
+
+30 epochs with embedding/LSTM size 100/32 without any pre-trained embeddings:
+ - f1: 56.34
+           precision    recall  f1-score   support
+
+      LOC     0.6246    0.5868    0.6051      1849
+      PER     0.6165    0.4925    0.5476       865
+      ORG     0.4183    0.4104    0.4143       424
+
+micro avg     0.5925    0.5370    0.5634      3138
+macro avg     0.5945    0.5370    0.5635      3138
+
+"""
 import os
 
 import tensorflow.compat.v2 as tf
 import matplotlib.pyplot as plt
 
 import allnews_am.processing
+from seqeval.callbacks import F1Metrics
+
 
 tf.enable_v2_behavior()
 
@@ -18,26 +33,9 @@ COLUMN_TYPES = (
 )
 
 BATCH_SIZE = 32  # Number of examples used in each learning step.
-EPOCHS = 20  # Number of passes through entire dataset.
-EMBEDDING = 50  # Dimension of word embedding vector.
+EPOCHS = 30  # Number of passes through entire dataset.
+EMBEDDING = 100  # Dimension of word embedding vector.
 LSTM_SIZE = 32  # Dimension of the hidden/cell states of the LSTM network.
-
-
-def f1_score(y_true, y_pred):
-    """Get the f1 score for keras."""
-    true_positives = tf.keras.backend.sum(tf.keras.backend.round(
-        tf.keras.backend.clip(y_true * y_pred, 0, 1)))
-    possible_positives = tf.keras.backend.sum(
-        tf.keras.backend.round(tf.keras.backend.clip(y_true, 0, 1)))
-    predicted_positives = tf.keras.backend.sum(
-        tf.keras.backend.round(tf.keras.backend.clip(y_pred, 0, 1)))
-    precision = true_positives / (predicted_positives +
-                                  tf.keras.backend.epsilon())
-    recall = true_positives / (possible_positives +
-                               tf.keras.backend.epsilon())
-    f1_val = 2 * (precision * recall)/(precision + recall +
-                                       tf.keras.backend.epsilon())
-    return f1_val
 
 
 def data_stats(conll_reader, data_suffix=''):
@@ -148,6 +146,7 @@ def main():
         input_dim=len(word2idx),
         output_dim=EMBEDDING,
         mask_zero=True)(input_layer)
+    x = tf.keras.layers.Dropout(0.1)(x)
     x = tf.keras.layers.Bidirectional(
         tf.keras.layers.LSTM(
             units=LSTM_SIZE, return_sequences=True, recurrent_dropout=0.1))(x)
@@ -155,14 +154,17 @@ def main():
         len(idx2tag), activation='softmax'))(x)
 
     model = tf.keras.models.Model(input_layer, x)
-    model.compile(
-        optimizer="adam", loss='binary_crossentropy', metrics=[f1_score])
+    model.compile(optimizer="adam", loss='binary_crossentropy')
     model.summary()
 
     history = model.fit(
         train_batches,
         epochs=EPOCHS,
         validation_data=dev_batches,
+        callbacks=[
+            F1Metrics({i: t for i, t in enumerate(idx2tag)},
+                      validation_data=dev_batches)
+        ],
     )
 
 
