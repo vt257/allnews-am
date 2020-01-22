@@ -5,7 +5,7 @@ with open('README.md') as f:
 
 setuptools.setup(
     name='allnews_am',
-    version='0.1',
+    version='0.2',
     description='Natural Language Processing for Armenian News Summarization.',
     long_description=readme,
     packages=setuptools.find_packages(),

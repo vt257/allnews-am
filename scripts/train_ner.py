@@ -232,13 +232,13 @@ if __name__ == '__main__':
         '--epochs', default=30,
         help='The number of training epochs (passes through entire dataset).')
     parser.add_argument(
-        '--lstm_size', default=100,
+        '--lstm_size', default=32,
         help='Dimension of the hidden/cell states of the LSTM network.')
     parser.add_argument(
-        '--emb_dropout', default=0.1,
+        '--emb_dropout', default=0.2,
         help='The dropout applied right after the embedding layer.')
     parser.add_argument(
-        '--recurrent_dropout', default=0.1,
+        '--recurrent_dropout', default=0.2,
         help='The recurrent dropout of the LSTM layer.')
     parser.add_argument(
         '--batch_size', default=32,
