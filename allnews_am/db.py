@@ -5,6 +5,8 @@ NEWS_TABLE = 'website_posts'
 TEXT_FIELD = 'text'
 TITLE_FIELD = 'title'
 
+MYSQL_MAX_LIMIT = 18446744073709551610
+
 
 class MySQL(object):
     """A MySQL database singleton.
@@ -59,10 +61,11 @@ class MySQL(object):
                 charset='utf8mb4', cursorclass=pymysql.cursors.DictCursor)
         return MySQL.__instance
 
-    def fetch_news(self, limit=18446744073709551610):
+    def fetch_news(self, offset=0, limit=MYSQL_MAX_LIMIT):
         """Gets the title and full text field of the news articles.
 
         Args:
+            offset: The offset for the query.
             limit: The number of news articles to fetch. If not set, fetches all
                 news articles.
 
@@ -72,8 +75,8 @@ class MySQL(object):
         """
         with self.connection.cursor() as cursor:
             sql = (f"SELECT `{TITLE_FIELD}`, `{TEXT_FIELD}` "
-                   f"FROM `{NEWS_TABLE}` LIMIT %s")
-            cursor.execute(sql, (limit, ))
+                   f"FROM `{NEWS_TABLE}` LIMIT %s, %s")
+            cursor.execute(sql, (offset, limit))
             return [
                 (news_item[TITLE_FIELD], news_item[TEXT_FIELD])
                 for news_item in cursor.fetchall()

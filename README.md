@@ -11,18 +11,18 @@ Natural Language Processing for Armenian News Summarization.
 
 ## Word embeddings 
 ### Training
-The processed Text8 corpus can be found 
-[here](https://storage.googleapis.com/allnews_am/corpus). 
+The processed corpus can be found 
+[here [~800MB]](https://storage.googleapis.com/allnews_am/corpus_1679k.zip). 
 This is produces by the `generate_corpus.py` script.
-Download it and put it in the `data` folder. After 
-this you should be able to run a word2vec training using e.g.
+Download it, unzip it and put the `corpus_1679k` file it in the `data` folder. 
+After this, you should be able to run a word2vec training using e.g.
 ```
-python scripts/train_word2vec.py --epochs=5
+python scripts/train_word2vec.py --epochs=5 --corpus=allnews_am/data/corpus_1679k
 ```
 which will save the model files in the `models` folder after
 the training is complete. Similarly, you can train FastText using
 ```
-python scripts/train_fasttext.py --epochs=5
+python scripts/train_fasttext.py --epochs=5  --corpus=allnews_am/data/corpus_1679k
 ```
 You can also run
 ```
@@ -36,7 +36,7 @@ You can run a basic evaluation using
 python scripts/explore_embeddings.py
 ```
 Some results on the `coarse_avetisyan_ghukasyan_analogies.txt` are
-shown below:
+shown below, for models trained on the 100k news corpus:
 
 | Model | Semantic | Syntactic | Total |
 | --- | --- | --- | --- |
