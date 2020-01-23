@@ -7,7 +7,7 @@ def parse_w2v_ft_args(file_dir):
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
             '--corpus',
-            default=os.path.join(file_dir, '../allnews_am/data/corpus'),
+            default=os.path.join(file_dir, '../allnews_am/data/corpus_1679k'),
             help='The path to the corpus to train on.')
     parser.add_argument(
             '--model_name', default='embeddings.model',
@@ -22,9 +22,9 @@ def parse_w2v_ft_args(file_dir):
             help='If set, will train a skip-gram, otherwise a CBOW.')
     parser.add_argument('--workers', default=4,
                         help='Number of workers.')
-    parser.add_argument('--alpha', default=0.025,
+    parser.add_argument('--alpha', default=0.1,
                         help='Learning rate.')
-    parser.add_argument('--negative', default=15,
+    parser.add_argument('--negative', default=10,
                         help='Number of negative samples.')
     parser.add_argument('--epochs', default=30,
                         help='Number of epochs.')
