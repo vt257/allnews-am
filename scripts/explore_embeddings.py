@@ -10,21 +10,22 @@ file_dir = os.path.dirname(os.path.realpath(__file__))
 
 
 def main(args):
+    model_path = os.path.join(file_dir, '../models/', args.model_name)
     try:
-        model = gensim.models.fasttext.FastText.load(
-            os.path.join(file_dir, '../allnews_am/models/', args.model_name))
+        model = gensim.models.fasttext.FastText.load(model_path)
     except AttributeError:
-        model = gensim.models.word2vec.Word2Vec.load(
-            os.path.join(file_dir, '../allnews_am/models/', args.model_name))
+        model = gensim.models.word2vec.Word2Vec.load(model_path)
+    except:
+        model = gensim.models.fasttext.load_facebook_model(model_path)
 
     logging.info('Evaluating YerevaNN-Analogies')
     model.wv.evaluate_word_analogies(
-        os.path.join(file_dir, '../allnews_am/data/yerevann_analogies.txt'))
+        os.path.join(file_dir, '../data/yerevann_analogies.txt'))
 
     logging.info('Evaluating Avetisyan-Ghukasyan-Analogies')
     model.wv.evaluate_word_analogies(
-          os.path.join(file_dir, '../allnews_am/data/'
-                                 'coarse_avetisyan_ghukasyan_analogies.txt'))
+          os.path.join(file_dir,
+                       '../data/coarse_avetisyan_ghukasyan_analogies.txt'))
 
     print(f'Vocabulary size: {len(model.wv.vocab)}')
     print('Most common words: ', [

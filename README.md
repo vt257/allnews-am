@@ -40,8 +40,15 @@ shown below, for models trained on the 100k news corpus:
 
 | Model | Semantic | Syntactic | Total |
 | --- | --- | --- | --- |
-| fastText_sg_100 |  4.0% (74/1858) |  50.0% (2537/5069) | 37.7% (2611/6927) |
-| word2vec_sg_100 |  9.1% (169/1858) |  4.8% (241/5069) |  5.9% (410/6927) |
+| fastText_sg_100_lr0025_ep30 |  4.0% (74/1858) |  50.0% (2537/5069) | 37.7% (2611/6927) |
+| word2vec_sg_100_lr0025_ep30 |  9.1% (169/1858) |  4.8% (241/5069) |  5.9% (410/6927) |
+
+For the 1679k news corpus:
+
+| Model | Semantic | Syntactic | Total |
+| --- | --- | --- | --- |
+| fastText_sg_200_lr01_ep10 |  0.5% (17/3392) |  46.8% (3346/7149) | 31.9% (3363/10541) |
+| fastText_sg_100_lr0025_ep5 |  2.8% (95/3392) |  45.6% (3260/7149) |  31.8% (3355/10541) |
 
 Both models were trained using the default hyperparameters.
 
