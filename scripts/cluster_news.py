@@ -189,7 +189,7 @@ import allnews_am.processing
 
 file_dir = os.path.dirname(os.path.realpath(__file__))
 emb_model = gensim.models.fasttext.FastText.load(
-    os.path.join(file_dir, '../allnews_am/models/fastText_sg_100.model'))
+    os.path.join(file_dir, '../models/fastText_sg_100.model'))
 
 
 def bag_of_words(s):

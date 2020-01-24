@@ -43,9 +43,9 @@ def main(args):
             sorted_vocab=True,
             iter=int(args.epochs))
     my_model.save(
-        os.path.join(file_dir, '../allnews_am/models/', args.model_name))
+        os.path.join(file_dir, '../models/', args.model_name))
     analogy_file = os.path.join(
-        file_dir, '../allnews_am/data/yerevann_analogies.txt')
+        file_dir, '../data/yerevann_analogies.txt')
     my_model.wv.evaluate_word_analogies(analogy_file)
 
 

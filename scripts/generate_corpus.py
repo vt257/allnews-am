@@ -32,7 +32,7 @@ if __name__ == '__main__':
             formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
             "--corpus_filename",
-            default=os.path.join(file_dir, "../allnews_am/data/corpus"),
+            default=os.path.join(file_dir, "../data/corpus"),
             help="The path to save the corpus to.")
     parser.add_argument(
         "--offset",

@@ -12,7 +12,7 @@ def parse_w2v_ft_args(file_dir):
     parser.add_argument(
             '--model_name', default='embeddings.model',
             help='The name of the model file (saved in models folder).')
-    parser.add_argument('--size', default=100, help='Size of the embedding.')
+    parser.add_argument('--size', default=200, help='Size of the embedding.')
     parser.add_argument('--window', default=5, help='Context window size.')
     parser.add_argument(
             '--min_count', default=5,
@@ -22,13 +22,13 @@ def parse_w2v_ft_args(file_dir):
             help='If set, will train a skip-gram, otherwise a CBOW.')
     parser.add_argument('--workers', default=4,
                         help='Number of workers.')
-    parser.add_argument('--alpha', default=0.1,
+    parser.add_argument('--alpha', default=0.05,
                         help='Learning rate.')
     parser.add_argument('--negative', default=10,
                         help='Number of negative samples.')
     parser.add_argument('--epochs', default=30,
                         help='Number of epochs.')
-    parser.add_argument('--subsample', default=0.003,
+    parser.add_argument('--subsample', default=0.0003,
                         help='Sub-sampling rate.')
     parser.add_argument(
             '-add_ner_sents', action='store_true',

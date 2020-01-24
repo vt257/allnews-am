@@ -109,7 +109,7 @@ venv.bak/
 .idea/**
 
 # large files
-allnews_am/data/corpus
-allnews_am/data/corpus_100k
-allnews_am/data/corpus_360k
-allnews_am/data/corpus_1679k
+data/corpus
+data/corpus_100k
+data/corpus_360k
+data/corpus_1679k

@@ -1,5 +1,4 @@
 """Trains a FastText model."""
-import itertools
 import logging
 import os
 
@@ -40,16 +39,17 @@ def main(args):
         sample=float(args.subsample),
         negative=int(args.negative),
         sorted_vocab=True,
-        min_n=2,
+        min_n=3,
+        max_n=5,
         iter=int(args.epochs))
     
     my_model.save(
-        os.path.join(file_dir, '../allnews_am/models/', args.model_name))
+        os.path.join(file_dir, '../models/', args.model_name))
     analogy_file = os.path.join(
-        file_dir, '../allnews_am/data/yerevann_analogies.txt')
+        file_dir, '../data/coarse_avetisyan_ghukasyan_analogies.txt')
     my_model.wv.evaluate_word_analogies(analogy_file)
-    
-    
+
+
 if __name__ == '__main__':
     fast_args = allnews_am.parse_w2v_ft_args(file_dir)
     main(fast_args)
