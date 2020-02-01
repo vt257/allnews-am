@@ -39,7 +39,7 @@ def main(args):
         sample=float(args.subsample),
         negative=int(args.negative),
         sorted_vocab=True,
-        min_n=3,
+        min_n=2,
         max_n=5,
         iter=int(args.epochs))
     

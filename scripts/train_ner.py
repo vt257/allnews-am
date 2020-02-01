@@ -9,26 +9,26 @@ SpatialDropout1D 0.3
 
 "easy test"
 [these are the values reported in the pioNER paper setting the benchmark.]
-- test f1: 65.53
+- test f1: 70.21
         precision   recall  f1-score   support
 
-Train     0.8557    0.8139    0.8325    130719
-Dev       0.7371    0.7207    0.7268     32528
-Test      0.7495    0.5971    0.6553     53606
+Train     0.8348    0.8103    0.8205    130719
+Dev       0.7772    0.7502    0.7603     32528
+Test      0.7919    0.6554    0.7021     53606
 
 [Overfitting - more tuning can improve the scores.]
 
 "difficult test" [dev]
 [only correct if all of the tokens for multi-token named entity are recognized]
- - f1: 62.45
+ - f1: 69.20
            precision    recall  f1-score   support
 
-      PER     0.6722    0.6543    0.6632       865
-      ORG     0.2986    0.3986    0.3414       424
-      LOC     0.6790    0.6852    0.6821      1849
+      LOC     0.6828    0.7647    0.7214      1849
+      ORG     0.4681    0.3986    0.4306       424
+      PER     0.7281    0.7584    0.7429       865
 
-micro avg     0.6115    0.6380    0.6245      3138
-macro avg     0.6257    0.6380    0.6308      3138
+micro avg     0.6718    0.7135    0.6920      3138
+macro avg     0.6663    0.7135    0.6881      3138
 """
 import argparse
 import os
@@ -87,10 +87,17 @@ def main(args):
         columntypes=COLUMN_TYPES,
     )
     data_stats(dev_data_reader, 'dev')
-    train_sentences = train_data_reader.iob_sents(column='ne')
     train_words = train_data_reader.iob_words(column='ne')
-    dev_sentences = dev_data_reader.iob_sents(column='ne')
-    test_sentences = test_data_reader.iob_sents(column='ne')
+    dev_words = dev_data_reader.iob_words(column='ne')
+    test_words = test_data_reader.iob_words(column='ne')
+    unique_words = set([w[0] for w in train_words + dev_words + test_words])
+
+    train_sentences = allnews_am.processing.standardize_iob(
+        train_data_reader.iob_sents(column='ne'))
+    dev_sentences = allnews_am.processing.standardize_iob(
+        dev_data_reader.iob_sents(column='ne'))
+    test_sentences = allnews_am.processing.standardize_iob(
+        test_data_reader.iob_sents(column='ne'))
 
     if args.plot_seq_len:
         # Plot the distribution of sentence lengths (in both train and dev).
@@ -102,7 +109,7 @@ def main(args):
         plt.show()
 
     # The first 2 entries are reserved for PAD and UNK
-    idx2word = ['PAD', 'UNK'] + list(set((t[0] for t in train_words)))
+    idx2word = ['PAD', 'UNK'] + list(unique_words)
     word2idx = {w: i for i, w in enumerate(idx2word)}
 
     # The first entry is reserved for PAD
@@ -111,7 +118,7 @@ def main(args):
     print('All NE tags: ', idx2tag)
 
     idx2char = ['PAD', 'UNK'] + list(
-        set([c for w in train_words for c in w[0]]))
+        set([c for w in unique_words for c in w]))
     char2idx = {c: i for i, c in enumerate(idx2char)}
     print('Number of unique characters: ', len(char2idx) - 2)
 
@@ -138,6 +145,7 @@ def main(args):
             [word2idx[w[0]] if w[0] in word2idx else 1 for w in s]
             for s in sentences  # 1 is for 'UNK'
         ]
+
         # Convert each NE tag to a categorical vector.
         encoded_tags = [
             [tf.keras.utils.to_categorical(tag2idx[w[2]], len(tag2idx))
@@ -187,7 +195,7 @@ def main(args):
         data = tf.data.Dataset.from_generator(
             lambda: data_generator(),
             ((tf.int64, tf.int64), tf.int64), output_shapes
-        ).shuffle(1000).padded_batch(batch_size, output_shapes)
+        ).shuffle(10000).padded_batch(batch_size, output_shapes)
         return data
 
     train_batches = prepare_sentence_batches(train_sentences)
@@ -285,7 +293,6 @@ if __name__ == '__main__':
     parser.add_argument(
         '--pretrained_emb',
         default=None,
-        # --pretrained_emb=models/fastText_sg_100.model
         help='The path to the pre-trained embeddings. If supplied, uses these '
              'fixed embeddings instead of training them on the fly. This also '
              'overrides the embedding dimension.')
@@ -305,7 +312,7 @@ if __name__ == '__main__':
         '--char_lstm_size', default=20,
         help='Dimension of the hidden/cell states of the character LSTM.')
     parser.add_argument(
-        '--batch_size', default=32,
+        '--batch_size', default=16,
         help='Number of examples used in each learning step.')
     parser.add_argument(
         '-test', action='store_true',

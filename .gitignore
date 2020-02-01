@@ -111,5 +111,7 @@ venv.bak/
 # large files
 data/corpus
 data/corpus_100k
-data/corpus_360k
 data/corpus_1679k
+data/corpus_1679k_and_hywiki
+data/hywiki_all
+data/wiki_json
