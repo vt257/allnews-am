@@ -118,3 +118,20 @@ def standardize(sentences):
         [STANDARDIZATION[t] if t in STANDARDIZATION else t for t in tokens]
         for tokens in sentences
     ]
+
+
+def standardize_iob(sentences):
+    """Standardizes the words in IOB sentences.
+
+    This includes, for instance, replacing colon '։' with Armenian ':' վերջակետ.
+
+    Args:
+        sentences: A sequence of sequences of tokens as word/pos/IOB tuples.
+
+    Returns:
+        A standardized sequence of sequences.
+    """
+    return [
+        [(STANDARDIZATION[t[0]], *t[1:]) if t[0] in STANDARDIZATION else t
+         for t in sentence] for sentence in sentences
+    ]
