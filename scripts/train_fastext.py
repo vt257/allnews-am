@@ -39,8 +39,8 @@ def main(args):
         sample=float(args.subsample),
         negative=int(args.negative),
         sorted_vocab=True,
-        min_n=2,
-        max_n=5,
+        min_n=3,
+        max_n=6,
         iter=int(args.epochs))
     
     my_model.save(

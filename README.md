@@ -79,11 +79,30 @@ is 0.003 unless specified otherwise with ss key.
 
 The embeddings can be improved a little further by adding hywiki (Armenian Wikipedia)
 corpus (data dump from 2020-01-20). The results on the combined, shuffled
-corpus of 1679k news + Wikipedia (a total of ~380m tokens) are below.
+corpus of 1679k news + Wikipedia (a total of 378m tokens) are below. The main
+improvement is the larger vocabulary, since the scores are otherwise similar to
+the corpus which has only news articles.
 
-| Model | Semantic (4154) | Syntactic (7203) | Total (11357) | NER_f1 (train) | NER_f1 (dev) | NER_f1 (test) |
-| ------------------------------ | ---- | ---- | ---- | ------| ----- | ----- |
-| ft_sg_100_lr0025_cn25_ss000001 | 18.9 | 57.0 | 43.0 | 84.81 | 79.01 | 72.52 |
+| Model | Semantic (4154) | Syntactic (7203) | Total (11357) | NER_f1 (train) | NER_f1 (dev) |
+| ----------------------------------- | ---- | ---- | -------- | ------| ----- |
+| ft_sg_100_lr0025_cn25_ss000001      | 18.9 | 57.0 | 43.0     | 84.81 | 79.01 |
+| ft_sg_100_lr0025_cn25_ss0000001     | 23.9 | 53.4 | 42.6     | 86.90 | 79.82 |
+| ft_sg_100_lr0025_cn35_ss00001       | 14.6 | 53.5 | 39.3     | 84.99 | 78.72 |
+| ft_sg_100_lr0025_cn35_ss000001      | 24.1 | 55.6 | 44.1     | 86.26 | 78.97 |
+| ft_sg_100_lr0025_cn35_ss0000001     | 30.4 | 52.2 | 44.2     | 87.04 | 78.56 |
+| **ft_sg_100_lr0025_cn36_ss000001**  | 27.7 | 55.0 | **45.0** | 85.90 | 78.64 |
+
+Since hyperparameter tuning does not lead to any substantial improvement, we use
+the recommended hyperparameters of character n-grams between 3 and 6 characters long, 
+and subsampling threshold of 1e-5 (000001). We train 4 models of embedding sizes 
+50, 100, 200 and 300.
+
+| Model | Semantic (4154) | Syntactic (7203) | Total (11357) | NER_f1 (train) | NER_f1 (dev) |
+| ------------------------------- | ---- | ---- | ---- | ------| ----- |
+| fastText_sg_50      | 20.3     | 44.2     | 35.4     | 83.46 | 78.33 |
+| fastText_sg_100     | 27.7     | 55.0     | 45.0     | 85.90 | 78.64 |
+| **fastText_sg_200** | **30.6** | 60.2     | **49.4** | 89.42 | 79.91 |
+| **fastText_sg_300** | 28.6     | **61.3** | **49.4** | 91.77 | 80.43 |
 
 All models are trained for 30 epochs, window 5 and min_count of 5, and 10
 negative samples for the loss function.
@@ -133,6 +152,7 @@ and hyperparameters are tuned one at a time.
 | Main LSTM Size 50 -> 100          | 90.49 | 79.84 | 70.29 |
 | Main LSTM Size 50 -> 40           | 83.93 | 78.12 | 71.40 |
 | Char embedding 10 -> 20           | 85.53 | 79.10 | 71.41 |
+| Char LSTM Size 20 -> 10           | 86.14 | 79.61 | 72.65 |
 | Batch size 32 -> 16               | 85.82 | 78.82 | 72.84 |
 | LSTM -> GRU                       | 84.27 | 78.80 | 72.53 |
 | Epochs 30 -> 60                   | 87.90 | 79.65 | 72.02 |
